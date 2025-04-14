@@ -1,0 +1,38 @@
+{
+    "server": {
+      "listenerAddress": "0.0.0.0",
+      "listenerPort": 5020,
+      "protocol": "TCP",
+      "tlsParams": {
+        "description": "path to certificate and private key to enable tls",
+        "privateKey": null,
+        "certificate": null
+      },
+      "logging": {
+        "format": "%(asctime)-15s %(threadName)-15s  %(levelname)-8s %(module)-15s:%(lineno)-8s %(message)s",
+        "logLevel": "INFO"
+      }
+    },
+    "registers": {
+      "description": "initial values for the register types",
+      "zeroMode": false,
+      "initializeUndefinedRegisters": true,
+      "discreteInput": {
+        "0": true,
+        "1": false
+      },
+      "coils": {
+        "0": true,
+        "1": false
+      },
+      "holdingRegister": {
+        "9": "0xAA00",
+        "23": "0xBB11"
+      },
+      "inputRegister": {
+        "142": "0x1FC3",
+        "2346": "0x00FF"
+      }
+    }
+  }
+  

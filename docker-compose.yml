@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/MQTT/config:/mosquitto/config
+      - ./docker/MQTT/data:/mosquitto/data
+      - ./docker/MQTT/log:/mosquitto/log
+
+  coap:
+    build:
+      context: ./docker/COAP
+    ports:
+      - "5683:5683/udp"  # Port COAP standard (UDP)
+    networks:
+      - iot_network
+
+  modbus-server:
+    container_name: modbus-server
+    image: oitc/modbus-server:latest
+    restart: always
+    ports:
+      - "5020:5020"  # Mapping du port 5020 pour Modbus TCP
+    volumes:
+      - ./docker/MODBUS/server_config.json:/server_config.json:ro  # Monter ton fichier de configuration personnalisé
+    command: -f /server_config.json  # Indique le fichier de configuration à utiliser
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP (protocole IoT)
+      - "15672:15672"   # Interface web de management
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+
+networks:
+  iot_network:
+    driver: bridge

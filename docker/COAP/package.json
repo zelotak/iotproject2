@@ -1,0 +1,9 @@
+{
+  "name": "coap-server",
+  "version": "1.0.0",
+  "main": "coap-server.js",
+  "dependencies": {
+    "coap": "^0.26.0",
+    "express-rate-limit": "^7.1.3"
+  }
+}
