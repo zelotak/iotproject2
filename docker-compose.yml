@@ -39,6 +39,15 @@ services:
       RABBITMQ_DEFAULT_PASS: admin
     restart: unless-stopped
 
+  opcua-server:
+    image: mcr.microsoft.com/iotedge/opc-plc:latest
+    container_name: opcua-server
+    ports:
+      - "4840:4840"  # Utilisation du port par défaut 4840
+      - "8080:8080"  # Port HTTP pour une interface de gestion
+    command: --pn=4840 --autoaccept --sph --sn=5 --sr=10 --st=uint --fn=5 --fr=1 --ft=uint --ctb --scn --lid --lsn --ref --gn=5
+    restart: always
+
 volumes:
   mosquitto_data:
   mosquitto_log:

@@ -10,66 +10,49 @@ class MQTTTester:
         self.port = port
         self.results = []
 
+    def insert_result(self, test, vulne, detail):
+        """Ajoute un résultat à la liste des résultats"""
+        self.results.append({
+            "protocol": "MQTT",  
+            "test": test,
+            "vulne": vulne,
+            "detail": detail
+        })
+
     def try_connection(self, username=None, password=None, label="Test"):
         """Essaye une connexion et retourne True si succès, False sinon"""
         client = mqtt.Client()
         if username:
             client.username_pw_set(username, password)
         
-        print(f"[{label}] ➜ Connexion avec {username or 'anonyme'} / {password or 'aucun mot de passe'}")
         try:
             client.connect(self.host, self.port, 5)
             client.loop_start()
-            time.sleep(2)
+            time.sleep(1)
             connected = client.is_connected()
             client.disconnect()
             client.loop_stop()
-            print(f"[{label}] ✅ RÉUSSI\n" if connected else f"[{label}] ❌ ÉCHOUÉ\n")
             return connected
         except Exception as e:
-            print(f"[{label}] ❌ ÉCHOUÉ - Exception : {str(e)}\n")
             return False
 
     def test_authentication(self):
-        print("== 🔐 TEST AUTHENTIFICATION ==")
-        
         # Test de la connexion anonyme (sans mot de passe)
         anonymous = self.try_connection(label="Anonyme")
         if anonymous:
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Connexion anonyme",
-                "vulne": "Oui",  # C'est une vulnérabilité d'accepter une connexion anonyme sans mot de passe
-                "detail": "Connexion réussie sans mot de passe requis"
-            })
+            self.insert_result("Connexion anonyme", True, "Connexion réussie sans mot de passe requis")
         else:
             # Test de la connexion avec un mot de passe vide
             empty_pass = self.try_connection(username="testuser", password="", label="User sans mot de passe")
             if empty_pass:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Connexion avec mot de passe vide",
-                    "vulne": "Oui",  # Connexion avec mot de passe vide est une vulnérabilité
-                    "detail": "Connexion réussie avec mot de passe vide"
-                })
+                self.insert_result("Connexion avec mot de passe vide", True, "Connexion réussie avec mot de passe vide")
             else:
                 # Test de la connexion avec un mot de passe faible
                 weak_pass = self.try_connection(username="testuser", password="1234", label="Mot de passe faible")
                 if weak_pass:
-                    self.results.append({
-                        "protocol": "MQTT",
-                        "test": "Connexion avec mot de passe faible",
-                        "vulne": "Oui",  # Un mot de passe faible est également une vulnérabilité
-                        "detail": "Connexion réussie avec mot de passe faible"
-                    })
+                    self.insert_result("Connexion avec mot de passe faible", True, "Connexion réussie avec mot de passe faible")
                 else:
-                    self.results.append({
-                        "protocol": "MQTT",
-                        "test": "Mot de passe requis",
-                        "vulne": "Non",  # Pas de vulnérabilité, un mot de passe est requis
-                        "detail": "Connexion avec mot de passe requis, aucune vulnérabilité détectée"
-                    })
-                    print("⚠️ Mot de passe requis. On tente un brute force.\n")
+                    self.insert_result("Mot de passe requis", False, "Connexion avec mot de passe requis, aucune vulnérabilité détectée")
                     valid_creds = self.test_brute_force_authentication()
                     if valid_creds:
                         self.valid_username, self.valid_password = valid_creds
@@ -77,7 +60,6 @@ class MQTTTester:
                         self.valid_username = self.valid_password = None
 
     def test_brute_force_authentication(self):
-        print("== 🔓 TEST BRUTE FORCE ==")
         credentials_list = [
             ("admin", "password"),
             ("root", "toor"),
@@ -89,24 +71,13 @@ class MQTTTester:
         for username, password in credentials_list:
             success = self.try_connection(username, password, label=f"BruteForce: {username}")
             if success:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Brute Force",
-                    "vulne": "Oui",
-                    "detail": f"Identifiants valides trouvés : {username}:{password}"
-                })
+                self.insert_result("Brute Force", True, f"Identifiants valides trouvés : {username}:{password}")
                 return username, password
 
-        self.results.append({
-            "protocol": "MQTT",
-            "test": "Brute Force",
-            "vulne": "Non",
-            "detail": "Aucun identifiant valide trouvé lors du brute force"
-        })
+        self.insert_result("Brute Force", False, "Aucun identifiant valide trouvé lors du brute force")
         return None
 
     def test_authorization(self):
-        print("== 🔑 TEST AUTORISATIONS PUB/SUB ==")
         topics = ["public/topic", "private/topic", "$SYS/broker"]
         
         client = mqtt.Client()
@@ -149,35 +120,18 @@ class MQTTTester:
 
             # Résultats des vulnérabilités détectées
             if vuln_pub:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Vulnérabilité : Publication autorisée",
-                    "vulne": "Oui",
-                    "detail": "La publication est autorisée sur des topics (public, private, $SYS) sans restrictions"
-                })
-
+                self.insert_result("Vulnérabilité : Publication autorisée", True, "La publication est autorisée sur des topics (public, private, $SYS) sans restrictions")
             if vuln_sub:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Vulnérabilité : Abonnement à un topic sensible autorisé",
-                    "vulne": "Oui",
-                    "detail": "L'abonnement à un topic sensible ($SYS/broker) est autorisé"
-                })
+                self.insert_result("Vulnérabilité : Abonnement à un topic sensible autorisé", True, "L'abonnement à un topic sensible ($SYS/broker) est autorisé")
 
         except Exception as e:
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Authorization",
-                "vulne": "Non",
-                "detail": f"Erreur pendant le test d'autorisation : {e}"
-            })
+            self.insert_result("Authorization", False, f"Erreur pendant le test d'autorisation : {e}")
             return
 
     def on_message(self, client, userdata, msg):
         print(f"[MSG] {msg.topic} → {msg.payload.decode()}")
 
     def test_flood_protection(self):
-        print("== 🌊 TEST PROTECTION FLOOD (DoS) ==")
         try:
             clients = [mqtt.Client(f"client_{i}") for i in range(50)]
             if self.valid_username:
@@ -197,29 +151,13 @@ class MQTTTester:
                 c.loop_stop()
 
             if alive < 50:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Protection flood",
-                    "vulne": "Non",
-                    "detail": f"Connexions actives : {alive}/50, le broker limite bien les connexions"
-                })
+                self.insert_result("Protection flood", False, f"Connexions actives : {alive}/50, le broker limite bien les connexions")
             else:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Protection flood",
-                    "vulne": "Oui",
-                    "detail": f"Connexions actives : {alive}/50, le broker accepte trop de connexions"
-                })
+                self.insert_result("Protection flood", True, f"Connexions actives : {alive}/50, le broker accepte trop de connexions")
         except Exception as e:
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Protection flood",
-                "vulne": "Non",
-                "detail": f"Erreur pendant le test de flood : {e}"
-            })
+            self.insert_result("Protection flood", False, f"Erreur pendant le test de flood : {e}")
 
     def test_reconnection(self):
-        print("== 🔄 TEST RECONNEXION AUTOMATIQUE ==")
         client = mqtt.Client()
         if self.valid_username:
             client.username_pw_set(self.valid_username, self.valid_password)
@@ -231,14 +169,11 @@ class MQTTTester:
                 print(f"❌ Échec de connexion avec code {rc}")
 
         def on_disconnect(c, u, rc):
-            print(f"💥 Déconnecté avec code {rc}")
             if rc != 0:
-                print("🔁 Tentative de reconnexion...")
                 try:
                     c.reconnect()
-                    print("✅ Reconnexion réussie")
                 except Exception as e:
-                    print(f"❌ Échec de reconnexion : {e}")
+                    print(f"Échec de reconnexion : {e}")
 
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
@@ -246,29 +181,17 @@ class MQTTTester:
         client.connect(self.host, self.port)
         client.loop_start()
         time.sleep(2)
-        print("💥 Déconnexion manuelle du client")
         client.disconnect()
         time.sleep(5)
 
         if client.is_connected():
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Reconnexion automatique",
-                "vulne": "Non",
-                "detail": "Le client est reconnecté après la déconnexion."
-            })
+            self.insert_result("Reconnexion automatique", False, "Le client est reconnecté après la déconnexion.")
         else:
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Reconnexion automatique",
-                "vulne": "Oui",
-                "detail": "Le client n'a pas réussi à se reconnecter."
-            })
+            self.insert_result("Reconnexion automatique", True, "Le client n'a pas réussi à se reconnecter.")
 
         client.loop_stop()
 
     def test_tls_connection(self):
-        print("== 🔐 TEST TLS/SSL ==")
         client = mqtt.Client()
         client.tls_set()
 
@@ -277,42 +200,31 @@ class MQTTTester:
             client.loop_start()
             time.sleep(2)
             if client.is_connected():
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Connexion TLS",
-                    "vulne": "Non",
-                    "detail": "Connexion TLS réussie"
-                })
+                self.insert_result("Connexion TLS", False, "Connexion TLS réussie")
             else:
-                self.results.append({
-                    "protocol": "MQTT",
-                    "test": "Connexion TLS",
-                    "vulne": "Oui",
-                    "detail": "Connexion TLS échouée"
-                })
+                self.insert_result("Connexion TLS", True, "Connexion TLS échouée")
             client.disconnect()
             client.loop_stop()
         except Exception as e:
-            self.results.append({
-                "protocol": "MQTT",
-                "test": "Connexion TLS",
-                "vulne": "Oui",
-                "detail": f"Erreur TLS : {e}"
-            })
+            self.insert_result("Connexion TLS", True, f"Erreur TLS : {e}")
+
+    def run_all(self):
+        self.test_authentication()
+        self.test_authorization()
+        self.test_flood_protection()
+        self.test_reconnection()
+        self.test_tls_connection()
+
+        return self.results
 
 # Fonction pour exécuter les tests et afficher le rapport
 def run_mqtt_tests():
     mqtt_host = "localhost"
     mqtt_port = 1883
     tester = MQTTTester(mqtt_host, mqtt_port)
+    results = tester.run_all()
 
-    tester.test_authentication()
-    tester.test_authorization()
-    tester.test_flood_protection()
-    tester.test_reconnection()
-    tester.test_tls_connection()
-
-    return tester.results
+    return results
 
 # Test standalone
 if __name__ == "__main__":
