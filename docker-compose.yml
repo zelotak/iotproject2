@@ -4,7 +4,7 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
-      - "127.0.0.1:1883:1883"
+      - "1883:1883"
     volumes:
       - ./docker/MQTT/config:/mosquitto/config
       - ./docker/MQTT/data:/mosquitto/data
@@ -16,7 +16,7 @@ services:
     build:
       context: ./docker/COAP
     ports:
-      - "127.0.0.1:5683:5683/udp"  # Port COAP standard (UDP)
+      - "5683:5683/udp"  # Port COAP standard (UDP)
     networks:
       - iot_network
 
@@ -25,7 +25,7 @@ services:
     image: oitc/modbus-server:latest
     restart: always
     ports:
-      - "127.0.0.1:5020:5020"  # Mapping du port 5020 pour Modbus TCP
+      - "5020:5020"  # Mapping du port 5020 pour Modbus TCP
     volumes:
       - ./docker/MODBUS/server_config.json:/server_config.json:ro  # Monter ton fichier de configuration personnalisé
     command: -f /server_config.json 
@@ -36,8 +36,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "127.0.0.1:5672:5672"     # AMQP (protocole IoT)
-      - "127.0.0.1:15672:15672"   # Interface web de management
+      - "5672:5672"     # AMQP (protocole IoT)
+      - "15672:15672"   # Interface web de management
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
@@ -49,8 +49,8 @@ services:
     image: mcr.microsoft.com/iotedge/opc-plc:latest
     container_name: opcua-server
     ports:
-      - "127.0.0.1:4840:4840"  # Utilisation du port par défaut 4840
-      - "127.0.0.1:8080:8080"  # Port HTTP pour une interface de gestion
+      - "4840:4840"  # Utilisation du port par défaut 4840
+      - "8080:8080"  # Port HTTP pour une interface de gestion
     command: --pn=4840 --autoaccept --sph --sn=5 --sr=10 --st=uint --fn=5 --fr=1 --ft=uint --ctb --scn --lid --lsn --ref --gn=5
     restart: always
     networks:
