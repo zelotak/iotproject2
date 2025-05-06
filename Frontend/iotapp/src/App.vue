@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <AppHeader @changeTab="currentTab = $event" :scanStarted="scanStarted" />
+    <AppHeader 
+      @changeTab="currentTab = $event" 
+      :scanStarted="scanStarted"
+      :testsStarted="testsStarted"
+    />
     <div class="content">
       <ScanView
         v-if="currentTab === 'SCAN'"
@@ -11,8 +15,14 @@
         @update:subnetMask="subnetMask = $event"
         @update:scanResults="scanResults = $event"
         @scanStarted="scanStarted = true"
+        @update:testResults="testResults = $event"
+        @testsStarted="testsStarted = true" 
       />
-      <div v-else style="padding: 20px;">Fonctionnalité à venir.</div>
+      <TabMqtt v-if="currentTab === 'MQTT'" :testResults="testResults" />
+      <TabCoap v-if="currentTab === 'COAP'" :testResults="testResults" />
+      <TabModbus v-if="currentTab === 'MODBUS'" :testResults="testResults" />
+      <TabOpcua v-if="currentTab === 'OPCUA'" :testResults="testResults" />
+      <TabAmqp v-if="currentTab === 'AMQP'" :testResults="testResults" />
     </div>
   </div>
 </template>
@@ -20,19 +30,31 @@
 <script>
 import AppHeader from './components/AppHeader.vue';
 import ScanView from './views/ScanView.vue';
+import TabMqtt from './views/TabMqtt.vue';   
+import TabCoap from './views/TabCoap.vue';  
+import TabModbus from './views/TabModbus.vue'; 
+import TabOpcua from './views/TabOpcua.vue';  
+import TabAmqp from './views/TabAmqp.vue';  
 
 export default {
   components: {
     AppHeader,
-    ScanView
+    ScanView,
+    TabAmqp,  
+    TabCoap,  
+    TabModbus, 
+    TabOpcua,  
+    TabMqtt    
   },
   data() {
     return {
       currentTab: 'SCAN',
       scanStarted: false,
+      testsStarted: false,
       network: '',
       subnetMask: '',
-      scanResults: []
+      scanResults: [],
+      testResults: []
     };
   }
 };

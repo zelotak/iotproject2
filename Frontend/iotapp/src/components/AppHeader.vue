@@ -1,50 +1,51 @@
 <template>
-  <header class="app-header">
-    <!-- Contenu du header avec titre et sous-titre -->
-    <div class="header-content">
-      <h1>IOT Pentesting</h1>
-      <p class="subtitle">Analyse et test des protocoles IoT courants</p>
-    </div>
-    <!-- Barre de navigation (les onglets) sous le titre -->
-    <div class="navbar">
-      <ul>
-        <li :class="{ active: activeTab === 'SCAN' }" @click="selectTab('SCAN')">SCAN</li>
-        <li :class="{ active: activeTab === 'MQTT', disabled: !scanStarted }" @click="selectTab('MQTT')">MQTT</li>
-        <li :class="{ active: activeTab === 'COAP', disabled: !scanStarted }" @click="selectTab('COAP')">COAP</li>
-        <li :class="{ active: activeTab === 'MODBUS', disabled: !scanStarted }" @click="selectTab('MODBUS')">MODBUS</li>
-        <li :class="{ active: activeTab === 'OPCUA', disabled: !scanStarted }" @click="selectTab('OPCUA')">OPCUA</li>
-        <li :class="{ active: activeTab === 'AMQP', disabled: !scanStarted }" @click="selectTab('AMQP')">AMQP</li>
-      </ul>
-    </div>
-  </header>
+    <header class="app-header">
+        <div class="header-content">
+        <h1>IOT Pentesting</h1>
+        <p class="subtitle">Analyse et test des protocoles IoT courants</p>
+        </div>
+        <div class="navbar">
+        <ul>
+            <li :class="{ active: activeTab === 'SCAN' }" @click="selectTab('SCAN')">SCAN</li>
+            <li :class="{ active: activeTab === 'MQTT', disabled: !testsStarted }" @click="selectTab('MQTT')">MQTT</li>
+            <li :class="{ active: activeTab === 'COAP', disabled: !testsStarted }" @click="selectTab('COAP')">COAP</li>
+            <li :class="{ active: activeTab === 'MODBUS', disabled: !testsStarted }" @click="selectTab('MODBUS')">MODBUS</li>
+            <li :class="{ active: activeTab === 'OPCUA', disabled: !testsStarted }" @click="selectTab('OPCUA')">OPCUA</li>
+            <li :class="{ active: activeTab === 'AMQP', disabled: !testsStarted }" @click="selectTab('AMQP')">AMQP</li>
+        </ul>
+        </div>
+    </header>
 </template>
 
 <script>
 export default {
-  name: 'AppHeader',
-  props: {
+name: 'AppHeader',
+props: {
     scanStarted: {
-      type: Boolean,
-      required: true
+    type: Boolean,
+    required: true
+    },
+    testsStarted: {
+    type: Boolean,
+    required: true
     }
-  },
-  data() {
+},
+data() {
     return {
-      activeTab: 'SCAN'
+    activeTab: 'SCAN'
     };
-  },
-  methods: {
+},
+methods: {
     selectTab(tab) {
-      // On permet le clic sur SCAN ou si le scan a démarré
-      if (this.scanStarted || tab === 'SCAN') {
+    if (this.testsStarted || tab === 'SCAN') {  // Seul testsStarted permet de déverrouiller les onglets
         this.activeTab = tab;
         this.$emit('changeTab', tab);
-      }
     }
-  }
+    }
+}
 };
 </script>
-
+  
 <style scoped>
 /* Style du Header */
 .app-header {

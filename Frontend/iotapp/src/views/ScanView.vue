@@ -1,101 +1,122 @@
 <template>
-  <div class="scan-view">
-    <div class="content-wrapper">
-      <header class="header">
-        <h2>Pentesting IoT</h2>
-        <p>Lancez une analyse réseau pour découvrir les services ouverts sur votre réseau IoT.</p>
-      </header>
-
-      <section class="card scan-form">
-        <h3>Paramètres du scan</h3>
-        <div class="form-group">
-          <label for="network">Adresse réseau</label>
-          <input
-            id="network"
-            :value="network"
-            @input="$emit('update:network', $event.target.value)"
-            type="text"
-            placeholder="192.168.1.0"
-          />
-        </div>
-        <div class="form-group">
-          <label for="mask">Masque de sous-réseau</label>
-          <input
-            id="mask"
-            :value="subnetMask"
-            @input="$emit('update:subnetMask', $event.target.value)"
-            type="text"
-            placeholder="255.255.255.0"
-          />
-        </div>
-        <button @click="startScan">Démarrer le scan</button>
-      </section>
-
-      <section v-if="scanResults.length" class="card scan-results">
-        <h3>Résultats du scan</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Hôte</th>
-              <th>Port</th>
-              <th>Protocole</th>
-              <th>État</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(result, index) in scanResults" :key="index">
-              <td>{{ result.host }}</td>
-              <td>{{ result.port }}</td>
-              <td>{{ result.protocol }}</td>
-              <td>{{ result.state }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+    <div class="scan-view">
+      <div class="content-wrapper">
+        <header class="header">
+          <h2>Pentesting IoT</h2>
+          <p>Lancez une analyse réseau pour découvrir les services ouverts sur votre réseau IoT.</p>
+        </header>
+  
+        <section class="card scan-form">
+          <h3>Paramètres du scan</h3>
+          <div class="form-group">
+            <label for="network">Adresse réseau</label>
+            <input
+              id="network"
+              :value="network"
+              @input="$emit('update:network', $event.target.value)"
+              type="text"
+              placeholder="192.168.1.0"
+            />
+          </div>
+          <div class="form-group">
+            <label for="mask">Masque de sous-réseau</label>
+            <input
+              id="mask"
+              :value="subnetMask"
+              @input="$emit('update:subnetMask', $event.target.value)"
+              type="text"
+              placeholder="255.255.255.0"
+            />
+          </div>
+          <button @click="startScan">Démarrer le scan</button>
+        </section>
+  
+        <section v-if="scanResults.length" class="card scan-results">
+          <h3>Résultats du scan</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Hôte</th>
+                <th>Port</th>
+                <th>Protocole</th>
+                <th>État</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(result, index) in scanResults" :key="index">
+                <td>{{ result.host }}</td>
+                <td>{{ result.port }}</td>
+                <td>{{ result.protocol }}</td>
+                <td>{{ result.state }}</td>
+              </tr>
+            </tbody>
+          </table>
+  
+          <div class="test-button-wrapper">
+            <button @click="startTests" :disabled="!scanResults.length">Lancer les tests</button>
+          </div>
+        </section>
+      </div>
     </div>
-  </div>
-</template>
-
-<script>
-import axios from 'axios';
-
-export default {
-  name: 'ScanView',
-  props: {
-    network: String,
-    subnetMask: String,
-    scanResults: Array
-  },
-  methods: {
-    async startScan() {
-      try {
-        const response = await axios.post('http://localhost:5000/scan', {
-          network: this.network,
-          mask: this.subnetMask
-        });
-
-        if (response.data && Array.isArray(response.data.results)) {
-          const results = response.data.results.map(result => ({
-            host: result.host,
-            port: result.port,
-            protocol: result.protocol,
-            state: result.state
-          }));
-
-          this.$emit('update:scanResults', results);
-        } else {
-          this.$emit('update:scanResults', []);
+  </template>
+  
+  <script>
+  import axios from 'axios';
+  
+  export default {
+    name: 'ScanView',
+    props: {
+      network: String,
+      subnetMask: String,
+      scanResults: Array
+    },
+    data() {
+        return {
+            testResults: [] 
+        };
+    },
+    methods: {
+      async startScan() {
+        try {
+          const response = await axios.post('http://localhost:5000/scan', {
+            network: this.network,
+            mask: this.subnetMask
+          });
+  
+          if (response.data && Array.isArray(response.data.results)) {
+            const results = response.data.results.map(result => ({
+              host: result.host,
+              port: result.port,
+              protocol: result.protocol,
+              state: result.state
+            }));
+  
+            this.$emit('update:scanResults', results);
+          } else {
+            this.$emit('update:scanResults', []);
+          }
+        } catch (error) {
+          console.error('Erreur lors du scan:', error);
+          alert('Erreur lors du scan. Voir console pour les détails.');
         }
+      },
+      async startTests() {
+        try {
+          const response = await axios.post('http://localhost:5000/pentest');
+          const results = response.data;
 
-        this.$emit('scanStarted');
-      } catch (error) {
-        console.error('Erreur lors du scan:', error);
-        alert('Erreur lors du scan. Voir console pour les détails.');
+          this.testResults = results;
+  
+          this.$emit('update:testResults', results);
+          this.$emit('testsStarted'); // C'est le bouton "Lancer les tests" qui déverrouille les onglets
+        } catch (error) {
+          console.error('Erreur lors des tests:', error);
+          alert('Erreur lors du lancement des tests. Voir console pour les détails.');
+        }
       }
     }
-  }
-};
-</script>
+  };
+  </script>  
 
 <style scoped>
 .scan-view {
@@ -216,6 +237,10 @@ tr:nth-child(even) {
 
 tr:hover {
   background-color: #f1f1f1;
+}
+
+.test-button-wrapper {
+  margin-top: 20px;
 }
 
 </style>
