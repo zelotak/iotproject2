@@ -1,6 +1,0 @@
-requests
-paho-mqtt==1.5.1
-aiocoap
-pika
-pymodbus
-opcua
