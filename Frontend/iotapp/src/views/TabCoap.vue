@@ -34,7 +34,7 @@
 
           <!-- Détail du test pour Premium -->
           <p v-if="isPremium" class="detail">{{ test.detail }}</p>
-          <p v-else class="detail-disabled"><em>Devenez premium pour voir les détails.</em></p>
+          <p v-else class="detail-disabled"><em>Abonnez-vous pour voir les détails</em></p>
   
           <!-- Explications pour Premium -->
           <div v-if="isPremium && explanations[test.test]" class="explanation">

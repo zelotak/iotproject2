@@ -22,10 +22,12 @@
                 <div @click="toggleRegisterModal">Créer un compte</div>
               </template>
               <template v-else>
-                <div>Status : <strong>{{ isPremium ? 'Premium' : 'Standard' }}</strong></div>
-                <div v-if="!isPremium" @click="upgradeToPremium">Passer Premium</div>
+                <div>Status : <strong>{{ isPremium ? 'Premium' : 'Gratuit' }}</strong></div>
+                <div v-if="!isPremium" @click="upgradeToPremium">Voir nos offres</div>
                 <div @click="logout">Déconnexion</div>
               </template>
+              <div @click="showTerms = true" class="cgu-link">Voir les CGU ℹ️</div>
+              <div @click="ExportPDF = true" class="export-link">Exporter les résulats</div>
               <div class="contact">Contact : support@pentestiot.io</div>
             </div>
           </li>
@@ -54,6 +56,29 @@
         <button @click="closeRegisterModal">Fermer</button>
       </div>
     </div>
+
+    <!-- Modal CGU -->
+    <div v-if="showTerms" class="modal">
+      <div class="modal-content cgu-modal">
+        <h2>Conditions Générales d'Utilisation</h2>
+        <div class="cgu-content">
+          <p>
+            Bienvenue sur PentestIoT. En utilisant notre service, vous acceptez les conditions suivantes :
+          </p>
+          <ul>
+            <li>Ce service est destiné à des fins de test sur des dispositifs autorisés.</li>
+            <li>Il est strictement interdit d’utiliser cet outil sur des cibles sans autorisation explicite.</li>
+            <li>Nous ne stockons pas vos données personnelles sauf votre adresse e-mail.</li>
+            <li>PentestIoT ne pourra être tenu responsable d’un usage malveillant de ses outils.</li>
+          </ul>
+          <p>
+            Merci de votre compréhension. Contactez-nous pour toute question.
+          </p>
+        </div>
+        <button @click="showTerms = false">Fermer</button>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -78,7 +103,8 @@ export default {
       registerUsername: '',
       registerPassword: '',
       showAccountMenu: false,
-      isPremium: false
+      isPremium: false,
+      showTerms: false
     };
   },
   mounted() {
@@ -231,7 +257,7 @@ h1 {
   transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.navbar li:hover {
+.navbar li:not(.auth-button):hover {
   background-color: #2a3c52;
   transform: scale(1.1);
 }

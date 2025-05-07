@@ -163,7 +163,7 @@
         "best_practice": "Limiter le nombre de connexions par utilisateur/IP, utiliser un reverse proxy ou un outil de contrôle de charge."
       }
     ],
-    "CoAP": [
+    "COAP": [
       {
         "test": "Securisation route",
         "explanation": "Ce test vérifie si certaines ressources (comme /sensor-data) sont accessibles sans authentification.",
