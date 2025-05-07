@@ -134,7 +134,7 @@
   /* Grid layout: plusieurs cartes par ligne */
   .test-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
   

@@ -50,7 +50,7 @@ class OPCUATester:
                 self.insert_result(test="Vérification des politiques de sécurité",vulne=True,detail=detail)
             else:
                 self.insert_result(test="Vérification des politiques de sécurité",vulne=False,detail="Aucune politique de sécurité faible détectée")
-                self.insert_result("Tests Avancés", False, "Pas d'accès valide pour tests avancés.")
+                self.insert_result("Tests Avancés", False, "Pas d'accès valide pour les tests avancés.")
         except Exception as e:
             self.insert_result(test="Vérification des politiques de sécurité",vulne=True,detail=f"Erreur lors de la récupération des endpoints : {str(e)}")
 

@@ -181,6 +181,9 @@ export default {
         this.isLoggedIn = false;
         this.username = '';
         this.isPremium = false;
+
+        // Recharge propre de la page
+        window.location.reload();
       } catch (err) {
         console.error("Erreur lors de la déconnexion", err);
         alert("Erreur lors de la déconnexion.");
