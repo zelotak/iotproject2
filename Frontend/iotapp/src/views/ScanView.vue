@@ -1,122 +1,155 @@
 <template>
-    <div class="scan-view">
-      <div class="content-wrapper">
-        <header class="header">
-          <h2>Pentesting IoT</h2>
-          <p>Lancez une analyse réseau pour découvrir les services ouverts sur votre réseau IoT.</p>
-        </header>
-  
-        <section class="card scan-form">
-          <h3>Paramètres du scan</h3>
-          <div class="form-group">
-            <label for="network">Adresse réseau</label>
-            <input
-              id="network"
-              :value="network"
-              @input="$emit('update:network', $event.target.value)"
-              type="text"
-              placeholder="192.168.1.0"
-            />
-          </div>
-          <div class="form-group">
-            <label for="mask">Masque de sous-réseau</label>
-            <input
-              id="mask"
-              :value="subnetMask"
-              @input="$emit('update:subnetMask', $event.target.value)"
-              type="text"
-              placeholder="255.255.255.0"
-            />
-          </div>
-          <button @click="startScan">Démarrer le scan</button>
-        </section>
-  
-        <section v-if="scanResults.length" class="card scan-results">
-          <h3>Résultats du scan</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Hôte</th>
-                <th>Port</th>
-                <th>Protocole</th>
-                <th>État</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(result, index) in scanResults" :key="index">
-                <td>{{ result.host }}</td>
-                <td>{{ result.port }}</td>
-                <td>{{ result.protocol }}</td>
-                <td>{{ result.state }}</td>
-              </tr>
-            </tbody>
-          </table>
-  
-          <div class="test-button-wrapper">
-            <button @click="startTests" :disabled="!scanResults.length">Lancer les tests</button>
-          </div>
-        </section>
-      </div>
-    </div>
-  </template>
-  
-  <script>
-  import axios from 'axios';
-  
-  export default {
-    name: 'ScanView',
-    props: {
-      network: String,
-      subnetMask: String,
-      scanResults: Array
-    },
-    data() {
-        return {
-            testResults: [] 
-        };
-    },
-    methods: {
-      async startScan() {
-        try {
-          const response = await axios.post('http://localhost:5000/scan', {
-            network: this.network,
-            mask: this.subnetMask
-          });
-  
-          if (response.data && Array.isArray(response.data.results)) {
-            const results = response.data.results.map(result => ({
-              host: result.host,
-              port: result.port,
-              protocol: result.protocol,
-              state: result.state
-            }));
-  
-            this.$emit('update:scanResults', results);
-          } else {
-            this.$emit('update:scanResults', []);
-          }
-        } catch (error) {
-          console.error('Erreur lors du scan:', error);
-          alert('Erreur lors du scan. Voir console pour les détails.');
-        }
-      },
-      async startTests() {
-        try {
-          const response = await axios.post('http://localhost:5000/pentest');
-          const results = response.data;
+  <div class="scan-view">
+    <div class="content-wrapper">
+      <header class="header">
+        <h2>Pentesting IoT</h2>
+        <p>Lancez une analyse réseau pour découvrir les services ouverts sur votre réseau IoT.</p>
+      </header>
 
-          this.testResults = results;
-  
-          this.$emit('update:testResults', results);
-          this.$emit('testsStarted'); // C'est le bouton "Lancer les tests" qui déverrouille les onglets
-        } catch (error) {
-          console.error('Erreur lors des tests:', error);
-          alert('Erreur lors du lancement des tests. Voir console pour les détails.');
+      <section class="card scan-form">
+        <h3>Paramètres du scan</h3>
+        <div class="form-group">
+          <label for="network">Adresse réseau</label>
+          <input
+            id="network"
+            v-model="localNetwork"
+            type="text"
+            placeholder="192.168.1.0"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="form-group">
+          <label for="mask">Masque de sous-réseau</label>
+          <input
+            id="mask"
+            v-model="localMask"
+            type="text"
+            placeholder="24"
+            :disabled="isLoading"
+          />
+        </div>
+        <button @click="startScan" :disabled="isLoading">
+          <span v-if="!isLoading">Démarrer le scan</span>
+          <span v-else>Chargement...</span>
+        </button>
+      </section>
+
+      <section v-if="scanResults.length" class="card scan-results">
+        <h3>Résultats du scan</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Hôte</th>
+              <th>Port</th>
+              <th>Protocole</th>
+              <th>État</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, i) in scanResults" :key="i">
+              <td>{{ r.host }}</td>
+              <td>{{ r.port }}</td>
+              <td>{{ r.protocol }}</td>
+              <td>{{ r.state }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="test-button-wrapper">
+          <button @click="startTests" :disabled="!scanResults.length || isLoadingTests">
+            <span v-if="!isLoadingTests">Lancer les tests</span>
+            <span v-else>Chargement...</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  name: 'ScanView',
+  props: {
+    scanResults: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data() {
+    return {
+      localNetwork: '',
+      localMask: '',
+      isLoading: false,
+      isLoadingTests: false
+    };
+  },
+  methods: {
+    isConnected() {
+      return localStorage.getItem('isConnected') === 'true';
+    },
+
+    async startScan() {
+      if (!this.isConnected()) {
+        return alert('Vous devez être connecté pour effectuer cette action.');
+      }
+
+      if (!this.localNetwork || !this.localMask) {
+        return alert("L'adresse réseau et le masque de sous-réseau sont requis.");
+      }
+
+      this.isLoading = true;
+      try {
+        const { data } = await axios.post('http://localhost:5000/scan', {
+          username: localStorage.getItem('username'),
+          network: this.localNetwork,
+          mask: this.localMask
+        });
+
+        if (!Array.isArray(data.results)) {
+          throw new Error('Format de réponse inattendu');
         }
+
+        const formatted = data.results.map(r => ({
+          host: r.host,
+          port: r.port,
+          protocol: r.protocol,
+          state: r.state
+        }));
+
+        this.$emit('update:scanResults', formatted);
+      } catch (err) {
+        console.error('Erreur lors du scan :', err.response?.data || err.message);
+        alert('Erreur lors du scan. Consultez la console pour plus de détails.');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async startTests() {
+      if (!this.isConnected()) {
+        return alert('Vous devez être connecté pour effectuer cette action.');
+      }
+
+      this.isLoadingTests = true;
+      try {
+        const { data } = await axios.post('http://localhost:5000/pentest', {
+          username: localStorage.getItem('username')
+        });
+
+        this.$emit('update:testResults', data);
+        this.$emit('testsStarted', true);
+      } catch (err) {
+        console.error('Erreur lors des tests :', err.response?.data || err.message);
+        alert('Erreur lors du lancement des tests. Consultez la console pour plus de détails.');
+      } finally {
+        this.isLoadingTests = false;
       }
     }
-  };
-  </script>  
+  }
+};
+</script>
 
 <style scoped>
 .scan-view {
