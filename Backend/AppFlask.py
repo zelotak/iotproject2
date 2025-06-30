@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuration de la base de données SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////media/hugo/my_data/data/Pentestiot/data/userdb.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////media/hugo/data/Pentestiot/data/userdb.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 app.config['SECRET_KEY'] = 'supersecretkey' 
 
@@ -66,6 +66,17 @@ def login():
 @app.route("/logout", methods=["POST"])
 def logout():
     return jsonify({"message": "Déconnexion réussie", "is_connected": False})
+
+# Route pour réinitialiser son mot de passe 
+@app.route("/reset", methods=["POST"])
+def reset():
+    username = request.json.get("username")
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({"error": "Utilisateur inconnu"}), 401
+    
+    return jsonify({"message": "Un email de réinitialisation été envoyé"})
 
 # Route pour effectuer un scan de réseau (accessible seulement si l'utilisateur est connecté)
 @app.route("/scan", methods=["POST"])

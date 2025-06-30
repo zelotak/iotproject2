@@ -1,0 +1,3 @@
+.venv/
+docker/MQTT/data/mosquitto.db
+docker/MQTT/log/mosquitto.log

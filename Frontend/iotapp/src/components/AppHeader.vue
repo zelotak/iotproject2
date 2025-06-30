@@ -20,6 +20,7 @@
               <template v-if="!isLoggedIn">
                 <div @click="toggleLoginModal">Se connecter</div>
                 <div @click="toggleRegisterModal">Créer un compte</div>
+                <div @click="toggleResetModal">Mot de passe oublié</div>
               </template>
               <template v-else>
                 <div>Status : <strong>{{ isPremium ? 'Premium' : 'Gratuit' }}</strong></div>
@@ -43,6 +44,16 @@
         <input v-model="loginPassword" type="password" placeholder="Mot de passe" />
         <button @click="login(loginUsername, loginPassword)">Se connecter</button>
         <button @click="closeLoginModal">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Modal de réinitialisation de mot de passe -->
+    <div v-if="showResetModal" class="modal">
+      <div class="modal-content">
+        <h2>Mot de passe oublié</h2>
+        <input v-model="resetUsername" placeholder="Adresse mail" />
+        <button @click="reset(resetUsername)">Réinitialiser</button>
+        <button @click="closeResetModal">Fermer</button>
       </div>
     </div>
 
@@ -98,10 +109,12 @@ export default {
       username: '',
       showLoginModal: false,
       showRegisterModal: false,
+      showResetModal: false,
       loginUsername: '',
       loginPassword: '',
       registerUsername: '',
       registerPassword: '',
+      resetUsername: '',
       showAccountMenu: false,
       isPremium: false,
       showTerms: false
@@ -128,6 +141,12 @@ export default {
     },
     closeRegisterModal() {
       this.showRegisterModal = false;
+    },
+    toggleResetModal() {
+      this.showResetModal = true;
+    },
+    closeResetModal() {
+      this.showResetModal = false;
     },
     toggleAccountMenu() {
       this.showAccountMenu = !this.showAccountMenu;
@@ -168,6 +187,24 @@ export default {
       } catch (err) {
         console.error("Erreur d'inscription", err);
         alert("Erreur lors de l'inscription");
+      }
+    },
+    async reset(username) {
+      try {
+        const response = await axios.post('http://127.0.0.1:5000/reset', { username });
+        // Récupère le message depuis le backend
+        const message = response.data.message;
+
+        alert(message);
+        this.closeResetModal();
+      } catch (err) {
+        console.error("Erreur de réinitialisation", err);
+        // Si le backend renvoie une erreur avec message JSON :
+        if (err.response && err.response.data && err.response.data.error) {
+          alert(err.response.data.error);  // Exemple : "Utilisateur inconnu"
+        } else {
+          alert("Erreur lors de la réinitialisation");
+        }
       }
     },
     async logout() {

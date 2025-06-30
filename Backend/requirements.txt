@@ -6,3 +6,5 @@ pymodbus
 opcua
 python-nmap
 Flask
+flask-cors
+Flask-SQLAlchemy
