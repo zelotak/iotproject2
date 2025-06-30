@@ -73,18 +73,37 @@
       <div class="modal-content cgu-modal">
         <h2>Conditions Générales d'Utilisation</h2>
         <div class="cgu-content">
-          <p>
-            Bienvenue sur PentestIoT. En utilisant notre service, vous acceptez les conditions suivantes :
-          </p>
-          <ul>
-            <li>Ce service est destiné à des fins de test sur des dispositifs autorisés.</li>
-            <li>Il est strictement interdit d’utiliser cet outil sur des cibles sans autorisation explicite.</li>
-            <li>Nous ne stockons pas vos données personnelles sauf votre adresse e-mail.</li>
-            <li>PentestIoT ne pourra être tenu responsable d’un usage malveillant de ses outils.</li>
-          </ul>
-          <p>
-            Merci de votre compréhension. Contactez-nous pour toute question.
-          </p>
+          <p>Dernière mise à jour : 30 juin 2025</p>
+
+          <h3>1. Objet</h3>
+          <p>PentestIoT est une plateforme dédiée à l’analyse et au test de la sécurité des protocoles IoT. En accédant au service, l’utilisateur accepte les présentes CGU.</p>
+
+          <h3>2. Conditions d’utilisation</h3>
+          <p>Ce service est destiné à des tests effectués exclusivement sur des dispositifs autorisés. Toute tentative de test sur une cible sans consentement explicite est strictement interdite.</p>
+
+          <h3>3. Compte utilisateur</h3>
+          <p>L’utilisateur est responsable de ses identifiants. Toute activité réalisée sous son compte lui est imputable.</p>
+
+          <h3>4. Propriété intellectuelle</h3>
+          <p>Le contenu de la plateforme, incluant le code, les interfaces et la documentation, est la propriété exclusive de ses créateurs.</p>
+
+          <h3>5. Données personnelles</h3>
+          <p>Seule l’adresse e-mail est collectée, et uniquement à des fins d’identification. Aucune donnée liée aux tests réalisés n’est stockée.</p>
+
+          <h3>6. Responsabilité</h3>
+          <p>PentestIoT ne peut être tenu responsable d’un usage inapproprié de ses outils. L’utilisateur est entièrement responsable des tests qu’il effectue.</p>
+
+          <h3>7. Sécurité</h3>
+          <p>Le service est fourni "en l’état". L’utilisateur est invité à protéger ses propres données et équipements lors de l’usage de la plateforme.</p>
+
+          <h3>8. Modifications</h3>
+          <p>Les présentes CGU peuvent être modifiées à tout moment. Les utilisateurs seront informés en cas de changement important.</p>
+
+          <h3>9. Droit applicable</h3>
+          <p>Les CGU sont soumises au droit français. Tout litige sera porté devant les tribunaux compétents.</p>
+
+          <h3>10. Contact</h3>
+          <p>Pour toute question : <strong>support@pentestiot.io</strong></p>
         </div>
         <button @click="showTerms = false">Fermer</button>
       </div>
@@ -156,7 +175,7 @@ export default {
     },
     async login(username, password) {
       try {
-        const { data } = await axios.post('http://127.0.0.1:5000/login', {
+        const { data } = await axios.post('http://localhost:5000/login', {
           username,
           password
         });
@@ -180,7 +199,7 @@ export default {
     },
     async register(username, password) {
       try {
-        await axios.post('http://127.0.0.1:5000/register', { username, password });
+        await axios.post('http://localhost:5000/register', { username, password });
         alert("Compte créé avec succès !");
         await this.login(username, password);
         this.closeRegisterModal();
@@ -191,7 +210,7 @@ export default {
     },
     async reset(username) {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/reset', { username });
+        const response = await axios.post('http://localhost:5000/reset', { username });
         // Récupère le message depuis le backend
         const message = response.data.message;
 
@@ -209,7 +228,7 @@ export default {
     },
     async logout() {
       try {
-        await axios.post('http://127.0.0.1:5000/logout');
+        await axios.post('http://localhost:5000/logout');
 
         localStorage.removeItem('isConnected');
         localStorage.removeItem('isPremium');
@@ -366,6 +385,20 @@ input {
   border-radius: 8px;
   font-size: 16px;
   transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cgu-modal {
+  max-width: 700px;
+  margin: auto;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+.cgu-content {
+  max-height: 60vh; /* hauteur maximum à 60% de la hauteur de l'écran */
+  overflow-y: auto;  /* active le scroll si besoin */
+  padding-right: 1rem;
 }
 
 input:focus {

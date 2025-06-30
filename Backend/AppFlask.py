@@ -6,10 +6,10 @@ import bcrypt
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:8080"])
 
 # Configuration de la base de données SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////media/hugo/data/Pentestiot/data/userdb.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/userdb.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 app.config['SECRET_KEY'] = 'supersecretkey' 
 
@@ -137,4 +137,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000)
+    app.run(host="0.0.0.0", port=5000)

@@ -4,6 +4,8 @@ class IOTNetworkScanner:
     def __init__(self, subnet):
         self.subnet = subnet
         self.scanner = nmap.PortScanner()
+        # Remplacer le binaire utilisé par `sudo nmap`
+        self.scanner.NMAP_SCAN_EXECUTABLE = 'sudo nmap'
 
         # Mapping statique des ports à des protocoles IoT spécifiques
         self.port_protocol_mapping = {
@@ -27,10 +29,16 @@ class IOTNetworkScanner:
 
         # Scan the subnet using nmap
         try:
-            self.scanner.scan(hosts=self.subnet, arguments='-p 1883,4840,80,443,5683,5020,5672')
+            #self.scanner.scan(hosts=self.subnet, arguments='-p 1883,4840,80,443,5683,5020,5672')
+            self.scanner.scan(
+                hosts=self.subnet,
+                arguments='--open -sT -sU -p T:1883,4840,80,443,5683,5020,5672,U:1883,4840,80,443,5683,5020,5672'
+            )
 
             # Iterate over all hosts found and their respective open ports
             for host in self.scanner.all_hosts():
+                if host.endswith('.1'):
+                    continue  # On ignore l'ip de l'hote
                 # Iterate through all protocols for the host
                 for proto in self.scanner[host].all_protocols():
                     lport = self.scanner[host][proto].keys()

@@ -3,8 +3,9 @@ version: '3.8'
 services:
   mosquitto:
     image: eclipse-mosquitto:2
-    ports:
-      - "1883:1883"
+    container_name: mosquitto-server
+    # ports:
+    #   - "1883"
     volumes:
       - ./docker/MQTT/config:/mosquitto/config
       - ./docker/MQTT/data:/mosquitto/data
@@ -13,10 +14,11 @@ services:
       - iot_network
 
   coap:
+    container_name: coap-server
     build:
       context: ./docker/COAP
-    ports:
-      - "5683:5683/udp"  # Port COAP standard (UDP)
+    # ports:
+    #   - "5683/udp"  # Port COAP standard (UDP)
     networks:
       - iot_network
 
@@ -24,10 +26,10 @@ services:
     container_name: modbus-server
     image: oitc/modbus-server:latest
     restart: always
-    ports:
-      - "5020:5020"  # Mapping du port 5020 pour Modbus TCP
+    # ports:
+    #   - "5020"  # Mapping du port 5020 pour Modbus TCP
     volumes:
-      - ./docker/MODBUS/server_config.json:/server_config.json:ro  # Monter ton fichier de configuration personnalisé
+      - ./docker/MODBUS/server_config.json:/server_config.json:ro  
     command: -f /server_config.json 
     networks:
       - iot_network
@@ -35,9 +37,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
-    ports:
-      - "5672:5672"     # AMQP (protocole IoT)
-      - "15672:15672"   # Interface web de management
+    # ports:
+    #   - "5672"     # AMQP (protocole IoT)
+    #   - "15672"   # Interface web de management
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
@@ -48,13 +50,41 @@ services:
   opcua-server:
     image: mcr.microsoft.com/iotedge/opc-plc:latest
     container_name: opcua-server
-    ports:
-      - "4840:4840"  # Utilisation du port par défaut 4840
-      - "8080:8080"  # Port HTTP pour une interface de gestion
+    # ports:
+    #   - "4840"  # Utilisation du port par défaut 4840
+    #   - "8080"  # Port HTTP pour une interface de gestion
     command: --pn=4840 --autoaccept --sph --sn=5 --sr=10 --st=uint --fn=5 --fr=1 --ft=uint --ctb --scn --lid --lsn --ref --gn=5
     restart: always
     networks:
       - iot_network
+
+  iot-backend:
+    build:
+      context: ./Backend
+    container_name: iot-backend
+    ports:
+      - "5000:5000"  
+    networks:
+      - iot_network
+    volumes:
+      - ./data:/data
+    depends_on:
+      - mosquitto
+      - modbus-server
+      - coap
+      - opcua-server
+      - rabbitmq
+
+  iot-frontend:
+    build:
+      context: ./Frontend/iotapp
+    container_name: iot-frontend
+    ports:
+      - "8080:80"  
+    networks:
+      - iot_network
+    depends_on:
+      - iot-backend
 
 volumes:
   mosquitto_data:
