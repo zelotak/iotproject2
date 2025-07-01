@@ -3,31 +3,56 @@
     <div class="content-wrapper">
       <header class="header">
         <h2>Pentesting IoT</h2>
-        <p>Lancez une analyse réseau pour découvrir les services ouverts sur votre réseau IoT.</p>
+        <p>Lancez une analyse pour découvrir les services ouverts sur votre réseau IoT.</p>
       </header>
 
       <section class="card scan-form">
-        <h3>Paramètres du scan</h3>
         <div class="form-group">
-          <label for="network">Adresse réseau</label>
-          <input
-            id="network"
-            v-model="localNetwork"
-            type="text"
-            placeholder="192.168.1.0"
-            :disabled="isLoading"
-          />
+          <label for="scanMode">Type de scan</label>
+          <select id="scanMode" v-model="scanMode" :disabled="isLoading">
+            <option value="network">Scan d'un réseau</option>
+            <option value="host">Scan d'un hôte unique</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label for="mask">Masque de sous-réseau</label>
-          <input
-            id="mask"
-            v-model="localMask"
-            type="text"
-            placeholder="24"
-            :disabled="isLoading"
-          />
+
+        <!-- Pour un scan réseau -->
+        <div v-if="scanMode === 'network'">
+          <div class="form-group">
+            <label for="network">Adresse réseau</label>
+            <input
+              id="network"
+              v-model="localNetwork"
+              type="text"
+              placeholder="192.168.1.0"
+              :disabled="isLoading"
+            />
+          </div>
+          <div class="form-group">
+            <label for="mask">Masque de sous-réseau</label>
+            <input
+              id="mask"
+              v-model="localMask"
+              type="text"
+              placeholder="24"
+              :disabled="isLoading"
+            />
+          </div>
         </div>
+
+        <!-- Pour un scan hôte -->
+         <div v-else>
+          <div class="form-group">
+            <label for="host">Adresse IP de l'hôte</label>
+            <input
+              id="host"
+              v-model="targetHost"
+              type="text"
+              placeholder="192.168.1.42"
+              :disabled="isLoading"
+            />
+          </div>
+        </div>
+
         <button @click="startScan" :disabled="isLoading">
           <span v-if="!isLoading">Démarrer le scan</span>
           <span v-else>Chargement...</span>
@@ -79,8 +104,10 @@ export default {
   },
   data() {
     return {
+      scanMode: 'network', // 'network' ou 'host'
       localNetwork: '',
       localMask: '',
+      targetHost: '',
       isLoading: false,
       isLoadingTests: false
     };
@@ -95,17 +122,28 @@ export default {
         return alert('Vous devez être connecté pour effectuer cette action.');
       }
 
-      if (!this.localNetwork || !this.localMask) {
-        return alert("L'adresse réseau et le masque de sous-réseau sont requis.");
-      }
-
       this.isLoading = true;
+
       try {
-        const { data } = await axios.post('http://localhost:5000/scan', {
+        let payload = {
           username: localStorage.getItem('username'),
-          network: this.localNetwork,
-          mask: this.localMask
-        });
+          mode: this.scanMode
+        };
+
+        if(this.scanMode === 'network') {
+          if (!this.localNetwork || !this.localMask) {
+            return alert("L'adresse réseau et le masque sont requis.");
+          }
+          payload.network = this.localNetwork;
+          payload.mask = this.localMask;
+        } else {
+          if (!this.targetHost) {
+            return alert("L'adresse IP de l'hôte est requise.");
+          }
+          payload.host = this.targetHost;
+        } 
+
+        const { data } = await axios.post('http://localhost:5000/scan', payload);
 
         if (!Array.isArray(data.results)) {
           throw new Error('Format de réponse inattendu');
@@ -216,6 +254,7 @@ label {
 
 input {
   width: 100%;
+  box-sizing: border-box;
   padding: 12px;
   font-size: 15px;
   border: 1px solid #ccc;
@@ -227,6 +266,31 @@ input {
 input:focus {
   border-color: #009688;
   outline: none;
+}
+
+select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-bottom: 3px solid #999; /* Soulignement plus épais */
+  border-radius: 8px;
+  background-color: #fefefe;
+  color: #333;
+  transition: border-color 0.3s, background-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+select:focus {
+  border-color: #009688;
+  border-bottom: 3px solid #009688;
+  outline: none;
+  background-color: #ffffff;
 }
 
 button {

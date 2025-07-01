@@ -81,21 +81,27 @@ def reset():
 # Route pour effectuer un scan de réseau (accessible seulement si l'utilisateur est connecté)
 @app.route("/scan", methods=["POST"])
 def scan():
+    data = request.get_json()
     username = request.json.get("username")
-    
+    mode = data.get('mode')
+
     # Vérifier si l'utilisateur est connecté
     if not username:
         return jsonify({"error": "Vous devez être connecté pour effectuer un scan."}), 401
-    
-    # Effectuer le scan réseau
-    data = request.get_json()
-    network = data.get("network")
-    mask = data.get("mask")
 
-    if not network or not mask:
-        return jsonify({"error": "network et mask sont requis"}), 400
+    # Lancement d'un scan réseau ou host
+    if mode == 'network':
+        network = data.get("network")
+        mask = data.get("mask")
+        if not network or not mask:
+            return jsonify({"error": "Réseau et masque sont requis"}), 400
+        tester.run_network_scan(network, mask)
+    else:
+        host = data.get('host')
+        if not host:
+            return jsonify({"error": "L'adresse IP Hote est requise"}), 400
+        tester.run_network_scan(host)
 
-    tester.run_network_scan(network, mask)
     return jsonify({"message": "Scan terminé", "results": tester.network_results})
 
 # Route pour effectuer un pentest (accessible seulement si l'utilisateur est connecté)

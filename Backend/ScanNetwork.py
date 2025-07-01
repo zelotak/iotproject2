@@ -1,3 +1,4 @@
+# Attention à bien désactiver la demande de mot de passe nmap pour l'utilisateur qui lance le scan (UDP nécéssite root)
 import nmap
 
 class IOTNetworkScanner:
@@ -17,17 +18,10 @@ class IOTNetworkScanner:
             5020: 'Modbus',
             5672: 'AMQP'
         }
-
+    
     def scan_network(self):
-        """
-        Scan the network using nmap to identify devices and services.
-        """
-        print(f"Scanning the network in subnet {self.subnet}...")
-
-        # Initialisation du dictionnaire final pour stocker les résultats
-        results = []
-
-        # Scan the subnet using nmap
+        # Scan the network using nmap to identify devices and services.
+        results = [] 
         try:
             #self.scanner.scan(hosts=self.subnet, arguments='-p 1883,4840,80,443,5683,5020,5672')
             self.scanner.scan(
@@ -58,9 +52,6 @@ class IOTNetworkScanner:
             print(f"Error during scan: {str(e)}")
 
         return results
-
-    def run(self):
-        return self.scan_network()
 
 # Example usage
 if __name__ == "__main__":
