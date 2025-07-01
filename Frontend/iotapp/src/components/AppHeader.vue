@@ -7,12 +7,13 @@
       </div>
       <div class="navbar">
         <ul>
-          <li :class="{ active: activeTab === 'SCAN' }" @click="selectTab('SCAN')">SCAN</li>
-          <li :class="{ active: activeTab === 'MQTT', disabled: !testsStarted }" @click="selectTab('MQTT')">MQTT</li>
-          <li :class="{ active: activeTab === 'COAP', disabled: !testsStarted }" @click="selectTab('COAP')">COAP</li>
-          <li :class="{ active: activeTab === 'MODBUS', disabled: !testsStarted }" @click="selectTab('MODBUS')">MODBUS</li>
-          <li :class="{ active: activeTab === 'OPCUA', disabled: !testsStarted }" @click="selectTab('OPCUA')">OPCUA</li>
-          <li :class="{ active: activeTab === 'AMQP', disabled: !testsStarted }" @click="selectTab('AMQP')">AMQP</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'SCAN' }" @click="selectTab('SCAN')">SCAN</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'MQTT', disabled: !testsStarted }" @click="selectTab('MQTT')">MQTT</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'COAP', disabled: !testsStarted }" @click="selectTab('COAP')">COAP</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'MODBUS', disabled: !testsStarted }" @click="selectTab('MODBUS')">MODBUS</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'OPCUA', disabled: !testsStarted }" @click="selectTab('OPCUA')">OPCUA</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'AMQP', disabled: !testsStarted }" @click="selectTab('AMQP')">AMQP</li>
+          <li class="nav-tab" :class="{ active: activeTab === 'HISTO', disabled: false}" @click="selectTab('HISTO')">HISTO</li>
           <li class="auth-button" @click="toggleAccountMenu">
             <span v-if="isLoggedIn">{{ username }}</span>
             <span v-else>Compte</span>
@@ -144,7 +145,7 @@ export default {
   },
   methods: {
     selectTab(tab) {
-      if (this.testsStarted || tab === 'SCAN') {
+      if (this.testsStarted || tab === 'SCAN' || tab === 'HISTO') {
         this.activeTab = tab;
         this.$emit('changeTab', tab);
       }
@@ -289,7 +290,7 @@ h1 {
   margin-top: 8px;
 }
 
-/* Style de la barre de navigation (les onglets) */
+/* Barre de navigation */
 .navbar {
   display: flex;
   justify-content: center;
@@ -301,53 +302,57 @@ h1 {
 
 .navbar ul {
   list-style-type: none;
-  display: flex; /* Aligne les éléments horizontalement */
-  gap: 30px; /* Espacement égal entre les onglets */
+  display: flex;
+  gap: 30px;
   padding: 0;
   margin: 0;
 }
 
-.navbar li {
+/* Onglets de navigation */
+.nav-tab {
   padding: 8px 18px;
   cursor: pointer;
   font-size: 18px;
   font-weight: 600;
+  background-color: #324a60;
   border-radius: 25px;
   transition: background-color 0.3s ease, transform 0.3s ease;
+  color: white;
 }
 
-.navbar li:not(.auth-button):hover {
+.nav-tab:hover:not(.disabled) {
   background-color: #2a3c52;
   transform: scale(1.1);
 }
 
-.navbar li.active {
+.nav-tab.active {
   background-color: #009688;
   color: white;
   font-weight: bold;
 }
 
-.navbar li.active:hover {
+.nav-tab.active:hover {
   background-color: #00796b;
 }
 
-/* Griser les onglets désactivés */
-.navbar li.disabled {
-  background-color: #555; /* Gris pour les onglets désactivés */
+.nav-tab.disabled {
+  background-color: #555;
   cursor: not-allowed;
-  pointer-events: none; 
+  pointer-events: none;
   color: #888;
 }
 
-.navbar li.disabled:hover {
-  background-color: #555; /* Pas de changement au survol pour les onglets désactivés */
+.nav-tab.disabled:hover {
+  background-color: #555;
 }
 
+/* Bouton compte */
 .auth-button {
   cursor: pointer;
+  padding: 8px 18px;
   color: #00aaff;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .auth-button:hover {

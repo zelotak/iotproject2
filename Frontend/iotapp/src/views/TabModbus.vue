@@ -58,14 +58,13 @@
   
   export default {
     name: 'TabModbus',
-    data() {
-      return {
-        isPremium: localStorage.getItem('isPremium') === 'true'
-      }
-    },
     props: {
       testResults: {
         type: Object,
+        required: true
+      },
+      isPremium: {
+        type: Boolean,
         required: true
       }
     },

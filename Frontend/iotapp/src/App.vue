@@ -18,11 +18,12 @@
         @update:testResults="testResults = $event"
         @testsStarted="testsStarted = true" 
       />
-      <TabMqtt v-if="currentTab === 'MQTT'" :testResults="testResults" />
-      <TabCoap v-if="currentTab === 'COAP'" :testResults="testResults" />
-      <TabModbus v-if="currentTab === 'MODBUS'" :testResults="testResults" />
-      <TabOpcua v-if="currentTab === 'OPCUA'" :testResults="testResults" />
-      <TabAmqp v-if="currentTab === 'AMQP'" :testResults="testResults" />
+      <TabMqtt v-if="currentTab === 'MQTT'" :testResults="testResults" :isPremium="isPremium" />
+      <TabCoap v-if="currentTab === 'COAP'" :testResults="testResults" :isPremium="isPremium" />
+      <TabModbus v-if="currentTab === 'MODBUS'" :testResults="testResults" :isPremium="isPremium" />
+      <TabOpcua v-if="currentTab === 'OPCUA'" :testResults="testResults" :isPremium="isPremium" />
+      <TabAmqp v-if="currentTab === 'AMQP'" :testResults="testResults" :isPremium="isPremium" />
+      <TabHisto v-if="currentTab === 'HISTO'" :username="username" :isPremium="isPremium"/>
     </div>
   </div>
 </template>
@@ -34,7 +35,8 @@ import TabMqtt from './views/TabMqtt.vue';
 import TabCoap from './views/TabCoap.vue';  
 import TabModbus from './views/TabModbus.vue'; 
 import TabOpcua from './views/TabOpcua.vue';  
-import TabAmqp from './views/TabAmqp.vue';  
+import TabAmqp from './views/TabAmqp.vue';
+import TabHisto from './views/TabHisto.vue';
 
 export default {
   components: {
@@ -44,7 +46,8 @@ export default {
     TabCoap,  
     TabModbus, 
     TabOpcua,  
-    TabMqtt    
+    TabMqtt,
+    TabHisto  
   },
   data() {
     return {
@@ -54,7 +57,9 @@ export default {
       network: '',
       subnetMask: '',
       scanResults: [],
-      testResults: []
+      testResults: [],
+      username: localStorage.getItem('username'),
+      isPremium: localStorage.getItem('isPremium') === 'true'
     };
   }
 };

@@ -176,8 +176,18 @@ export default {
           username: localStorage.getItem('username')
         });
 
-        this.$emit('update:testResults', data);
+        this.$emit('update:testResults', data.results);
         this.$emit('testsStarted', true);
+
+        alert(
+          [
+            `✅ ${data.message}`,
+            '',
+            'Tests enregistrés avec les identifiants suivants :',
+            ...data.scan_ids.map(id => ` Scan #${id}`)
+          ].join('\n')
+        );
+
       } catch (err) {
         console.error('Erreur lors des tests :', err.response?.data || err.message);
         alert('Erreur lors du lancement des tests. Consultez la console pour plus de détails.');
