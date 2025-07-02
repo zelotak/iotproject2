@@ -69,6 +69,43 @@
       </div>
     </div>
 
+    <!-- Modal d'export -->
+    <div v-if="ExportPDF" class="modal">
+      <div class="modal-content">
+        <h2>Exporter un rapport</h2>
+
+        <div class="form-field">
+          <label>Date de début</label>
+          <input type="date" v-model="exportStart" />
+        </div>
+
+        <div class="form-field">
+          <label>Date de fin</label>
+          <input type="date" v-model="exportEnd" />
+        </div>
+
+        <button class="submit-btn" @click="fetchExportList">Rechercher</button>
+
+        <div v-if="exportList.length" class="checkbox-list">
+          <label v-for="scan in exportList" :key="scan.id" class="checkbox-entry">
+            <input
+              type="checkbox"
+              :value="scan.id"
+              v-model="selectedExportIds"
+            />
+            {{ scan.created_at }} – {{ scan.protocol }} sur {{ scan.target }}
+          </label>
+        </div>
+
+        <p v-else-if="exportChecked" class="empty-msg">Aucun audit trouvé dans cette période.</p>
+
+        <div class="modal-buttons">
+          <button class="submit-btn" @click="exportScanAsPDF" :disabled="!selectedExportIds.length">Exporter en PDF</button>
+          <button @click="ExportPDF = false">Fermer</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal CGU -->
     <div v-if="showTerms" class="modal">
       <div class="modal-content cgu-modal">
@@ -115,6 +152,8 @@
 
 <script>
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default {
   name: 'AppHeader',
@@ -137,7 +176,13 @@ export default {
       resetUsername: '',
       showAccountMenu: false,
       isPremium: false,
-      showTerms: false
+      showTerms: false,
+      ExportPDF: false,
+      exportStart: '',
+      exportEnd: '',
+      exportList: [],
+      selectedExportIds: [],
+      exportChecked: false
     };
   },
   mounted() {
@@ -253,6 +298,70 @@ export default {
         this.username = localStorage.getItem('username');
         this.isPremium = localStorage.getItem('isPremium') === 'true';
       }
+    },
+    async fetchExportList() {
+      if (!this.username || !this.exportStart || !this.exportEnd) return;
+
+      try {
+        const { data } = await axios.post('http://localhost:5000/history/list', {
+          username: this.username,
+          startDate: this.exportStart,
+          endDate: this.exportEnd
+        });
+        this.exportList = data.scans;
+        this.exportChecked = true;
+      } catch (err) {
+        console.error('Erreur récupération scans à exporter :', err);
+        alert("Impossible de récupérer la liste.");
+      }
+    },
+    async exportScanAsPDF() {
+      if (!this.selectedExportIds.length) return;
+
+      for (const id of this.selectedExportIds) {
+        try {
+          const [details, list] = await Promise.all([
+            axios.post('http://localhost:5000/history/details', { id }),
+            axios.post('http://localhost:5000/history/list', {
+              username: this.username,
+              startDate: this.exportStart,
+              endDate: this.exportEnd
+            })
+          ]);
+
+          const scan = list.data.scans.find(s => s.id === id);
+          if (!scan) continue;
+
+          const doc = new jsPDF();
+          doc.setFontSize(16);
+          doc.text('Rapport de Scan IoT', 14, 20);
+
+          doc.setFontSize(12);
+          doc.text(`Date : ${scan.created_at}`, 14, 30);
+          doc.text(`Cible : ${scan.target}`, 14, 37);
+          doc.text(`Protocole : ${scan.protocol}`, 14, 44);
+          doc.text(`Score : ${details.data.score}`, 14, 51);
+
+          autoTable(doc, {
+            head: [['Test', 'Vulnérabilité', 'Détail']],
+            body: details.data.tests.map(t => [
+              t.test,
+              t.vulne ? 'Vulnérable' : 'OK',
+              t.detail
+            ]),
+            startY: 60,
+            theme: 'grid',
+            styles: { fontSize: 10 }
+          });
+
+          const filename = `rapport_${scan.created_at.replace(/[: ]/g, '_')}.pdf`;
+          doc.save(filename);
+
+        } catch (err) {
+          console.error(`Erreur export ID ${id}:`, err);
+        }
+      }
+      this.ExportPDF = false;
     }
   }
 };
@@ -472,6 +581,42 @@ h2 {
   margin-top: 10px;
   color: #888;
   pointer-events: none;
+}
+
+.checkbox-list {
+  max-height: 120px;
+  overflow-y: auto;
+  margin-top: 16px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.checkbox-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.checkbox-entry:last-child {
+  border-bottom: none;
+}
+
+/* Limite la taille de la checkbox */
+.checkbox-entry input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Le texte prendra tout l'espace restant */
+.checkbox-entry label {
+  flex: 1;
+  word-break: break-word; /* Pour éviter que ça dépasse */
 }
 
 </style>

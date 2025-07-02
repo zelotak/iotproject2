@@ -120,9 +120,9 @@ class MQTTTester:
 
             # Résultats des vulnérabilités détectées
             if vuln_pub:
-                self.insert_result("Vulnérabilité : Publication autorisée", True, "La publication est autorisée sur des topics (public, private, $SYS) sans restrictions")
+                self.insert_result("Publication autorisée", True, "La publication est autorisée sur des topics (public, private, $SYS) sans restrictions")
             if vuln_sub:
-                self.insert_result("Vulnérabilité : Abonnement à un topic sensible autorisé", True, "L'abonnement à un topic sensible ($SYS/broker) est autorisé")
+                self.insert_result("Abonnement à un topic sensible autorisé", True, "L'abonnement à un topic sensible ($SYS/broker) est autorisé")
 
         except Exception as e:
             self.insert_result("Authorization", False, f"Erreur pendant le test d'autorisation : {e}")

@@ -3,7 +3,7 @@ from flask_cors import CORS
 from IOTPentest import IOTPenTest
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
-import json
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:8080"])
@@ -25,6 +25,19 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User {self.username}>"
+class Scan(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(80), nullable=False)
+    protocol = db.Column(db.String(20), nullable=False)  
+    target = db.Column(db.String(64), nullable=False)    
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    score = db.Column(db.Integer)                        
+    tests = db.relationship("Test", backref="scan", cascade="all, delete-orphan")
+class Test(db.Model):
+    scan_id = db.Column(db.Integer, db.ForeignKey('scan.id'), primary_key=True)
+    test = db.Column(db.String(256), primary_key=True)
+    vulne = db.Column(db.Boolean, nullable=False)
+    detail = db.Column(db.Text)
 
 tester = IOTPenTest()
 
@@ -49,6 +62,72 @@ def register():
     db.session.commit()
     
     return jsonify({"message": "Utilisateur créé avec succès"}), 201
+
+from datetime import datetime, timedelta
+
+@app.route("/history/list", methods=["POST"])
+def list_scans():
+    data = request.get_json()
+    username = data.get("username")
+    start_str = data.get("startDate")
+    end_str = data.get("endDate")
+
+    if not username:
+        return jsonify({"error": "Nom d'utilisateur requis"}), 400
+
+    try:
+        start = datetime.strptime(start_str, "%Y-%m-%d") if start_str else None
+        end = datetime.strptime(end_str, "%Y-%m-%d") if end_str else None
+    except ValueError:
+        return jsonify({"error": "Format de date invalide (attendu: YYYY-MM-DD)"}), 400
+
+    query = Scan.query.filter_by(username=username)
+    if start:
+        query = query.filter(Scan.created_at >= start)
+    if end:
+        query = query.filter(Scan.created_at <= end + timedelta(days=1))
+
+    scans = query.order_by(Scan.created_at.desc()).all()
+
+    result = [
+        {
+            "id": s.id,
+            "username": s.username,
+            "protocol": s.protocol,
+            "target": s.target,
+            "score": s.score,
+            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        for s in scans
+    ]
+
+    return jsonify({"scans": result}), 200
+
+@app.route("/history/details", methods=["POST"])
+def scan_details():
+    data = request.get_json()
+    scan_id = data.get("id")
+
+    if not scan_id:
+        return jsonify({"error": "Scan ID manquant"}), 400
+
+    scan = Scan.query.get(scan_id)
+    if not scan:
+        return jsonify({"error": "Scan introuvable"}), 404
+
+    details = [
+        {
+            "test": t.test,
+            "vulne": t.vulne,
+            "detail": t.detail
+        }
+        for t in scan.tests
+    ]
+
+    return jsonify({
+        "score": scan.score,
+        "tests": details
+    }), 200
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -108,6 +187,7 @@ def scan():
 @app.route("/pentest", methods=["POST"])
 def pentest():
     username = request.json.get("username")
+    tester.reset_results()
     
     # Vérifier si l'utilisateur est connecté
     if not username:
@@ -127,11 +207,52 @@ def pentest():
         "amqp": tester.amqp_results,
     }
 
-    # Utilisation de json.dumps() avec ensure_ascii=False pour gérer les accents
-    response_json = json.dumps(results, ensure_ascii=False)
+    scan_ids = []
 
-    # Retourner la réponse avec le bon encodage
-    return response_json, 200, {'Content-Type': 'application/json; charset=UTF-8'}
+    # Insertion des résultats dans la base de donnée 
+    for proto_name, proto_results in results.items():
+        if not proto_results:
+            continue # On passe si pas de résultats
+
+        # Extraire les tests et le score final
+        *tests, score_entry = proto_results
+        score = score_entry.get("score", 0)
+
+        # Déterminer la cible (host:port) depuis le résultat réseau
+        target = "inconnu"
+        for s in tester.network_results:
+            if s["protocol"].lower() == proto_name:
+                target = f"{s['host']}:{s['port']}"
+                break
+
+        # Création d'une ligne de Scan
+        scan = Scan(
+            username=username,
+            protocol=proto_name.upper(),
+            target=target,
+            score=score
+        )
+        db.session.add(scan)
+        db.session.flush() # Ici la base attribue un ID à `scan`
+        scan_ids.append(scan.id)  # on stocke l’identifiant du Scan créé
+
+        for result in tests:
+            test_entry = Test(
+                scan_id=scan.id,    
+                test=result["test"],        
+                vulne=result["vulne"],        
+                detail=result["detail"]        
+            )
+            db.session.add(test_entry)
+
+    db.session.commit()
+
+    # Construction d'une réponse structurée incluant les IDs
+    return jsonify({
+        "message": "Pentest terminé",
+        "results": results,
+        "scan_ids": scan_ids
+    }), 200
 
 # Route d'accueil
 @app.route("/", methods=["GET"])
